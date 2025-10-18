@@ -14,6 +14,9 @@ contract PoDS {
     mapping (address => uint[]) public userActivities;
     mapping (address => mapping(uint => bool)) public hasDoneActivity;
 
+    event ActivityAdded(uint id, address owner);
+    event ActivityDone(uint id, address participant);
+
     function stringToBytes (string memory source) public pure returns (bytes32 result){
         require(bytes(source).length <= 32, "Source string too long");
         assembly{
@@ -29,13 +32,26 @@ contract PoDS {
             owner: msg.sender,
             participants: new address[](0)
         }));
+
+        emit ActivityAdded(id, msg.sender);
     }
 
     function doingActivity (uint _id) public {
+        require(activities[_id].owner != address(0), "Activity does not exist");
         require(!hasDoneActivity[msg.sender][_id], "User has already done this activity");
         activities[_id].participants.push(msg.sender);
         userActivities[msg.sender].push(_id);
         hasDoneActivity[msg.sender][_id] = true;
+
+        emit ActivityDone(_id, msg.sender);
+    }
+
+    function getParticipants (uint _id) public view returns(address[] memory){
+        return activities[_id].participants;
+    }
+
+    function getTotalParticipants (uint _id) public view returns(uint) {
+        return activities[_id].participants.length;
     }
 
 }
